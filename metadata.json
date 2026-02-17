@@ -1,0 +1,7 @@
+{
+  "name": "VasPay - AI Digital Wallet",
+  "description": "Next-gen AI-powered digital wallet and payment platform specialized for the Nepalese market. Features smart spending analytics, fraud monitoring, and an agentic AI financial assistant.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
