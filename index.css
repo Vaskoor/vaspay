@@ -1,0 +1,152 @@
+/**
+ * VasPay global stylesheet.
+ *
+ * Tailwind (loaded via CDN in index.html) provides the bulk of the styling
+ * surface; this file declares a small set of custom utilities and base styles
+ * that complement the design system: safe-area helpers for iOS, hidden and
+ * refined scrollbars, a frosted-glass surface, a card shadow, a fade-in
+ * animation, accessible focus rings, and a `prefers-reduced-motion` block.
+ *
+ * @license MIT
+ * @author VasPay Team
+ */
+
+:root {
+  --vp-radius: 1rem;
+  --vp-shadow-card: 0 1px 2px 0 rgba(15, 23, 42, 0.04),
+    0 1px 3px 0 rgba(15, 23, 42, 0.06);
+  --vp-indigo: #4f46e5;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* ------------------------------------------------------------------ */
+/* iOS safe-area helpers                                                */
+/* ------------------------------------------------------------------ */
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ------------------------------------------------------------------ */
+/* Scrollbar styling                                                    */
+/* ------------------------------------------------------------------ */
+
+/* Hide scrollbars entirely (horizontal chip rows, etc.) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Refined thin scrollbar for vertical content areas */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reusable surfaces                                                    */
+/* ------------------------------------------------------------------ */
+
+/* Frosted-glass surface — used by the sticky header + bottom nav. */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+/* Card shadow — gentle elevation for content cards. */
+.card-shadow {
+  box-shadow: var(--vp-shadow-card);
+}
+
+/* ------------------------------------------------------------------ */
+/* Animations                                                           */
+/* ------------------------------------------------------------------ */
+
+@keyframes vp-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: vp-fade-in 0.28s ease-out both;
+}
+
+@keyframes vp-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+.animate-pulse-ring {
+  animation: vp-pulse-ring 1.6s ease-out infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/* Accessibility                                                        */
+/* ------------------------------------------------------------------ */
+
+/* Visible keyboard focus ring for any focusable element. */
+:focus-visible {
+  outline: 2px solid var(--vp-indigo);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

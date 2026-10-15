@@ -1,162 +1,227 @@
-import React, { useState, useRef, useEffect } from 'react';
+/**
+ * VasPay — Nepal's First Agentic AI Digital Wallet
+ * Copyright (c) 2025 VasPay. MIT License.
+ *
+ * AIChat page — full chat UI: message list (user right indigo bubble, model
+ * left slate bubble), thinking indicator with animated dots, suggested-prompt
+ * chips, input bar. Uses getFinancialAdvice with MOCK_TRANSACTIONS context.
+ */
+import React, { useEffect, useRef, useState } from 'react';
 import { getFinancialAdvice } from '../services/geminiService';
 import { ChatMessage, User } from '../types';
 import { MOCK_TRANSACTIONS } from '../constants';
-import { Send, Bot, User as UserIcon, Loader2, Sparkles, ChevronRight } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bot,
+  Send,
+  User as UserIcon,
+  Sparkles,
+  Loader2,
+  AlertTriangle,
+  type LucideIcon,
+} from 'lucide-react';
 
 interface AIChatProps {
   user: User;
+  /** Optional: render a sticky header with a back button. */
+  onBack?: () => void;
 }
 
-const AIChat: React.FC<AIChatProps> = ({ user }) => {
+const SUGGESTIONS: { label: string; prompt: string; icon: LucideIcon }[] = [
+  { label: 'Analyse my spending', prompt: 'Analyse my spending over the last month and tell me where I can save.', icon: Sparkles },
+  { label: 'How much on food?', prompt: 'How much did I spend on food this month?', icon: Bot },
+  { label: 'Suggest a budget', prompt: 'Suggest a monthly budget based on my spending history.', icon: Send },
+  { label: 'Is this tx safe?', prompt: 'Is my latest transaction safe? Check for fraud risk.', icon: AlertTriangle },
+];
+
+const AIChat: React.FC<AIChatProps> = ({ user, onBack }) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: '1',
+      id: 'welcome',
       role: 'model',
-      text: `Namaste ${user.name}! I am your VasPay AI assistant. I can help you analyze your spending, detect fraud, or give budgeting tips. How can I help you today?`,
-      timestamp: new Date()
-    }
+      text: `Namaste ${user.name.split(' ')[0]}! I'm VasPay AI, your agentic finance co-pilot. I can analyse your spending, suggest budgets, and flag risky transactions. What would you like to know?`,
+      timestamp: new Date(),
+    },
   ]);
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const [error, setError] = useState<string | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  const send = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
 
+    setError(null);
     const userMsg: ChatMessage = {
-      id: Date.now().toString(),
+      id: `u-${Date.now()}`,
       role: 'user',
-      text: input,
-      timestamp: new Date()
+      text: trimmed,
+      timestamp: new Date(),
     };
-
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
-    // Call Gemini API
-    const responseText = await getFinancialAdvice(userMsg.text, MOCK_TRANSACTIONS);
-
-    const aiMsg: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'model',
-      text: responseText,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, aiMsg]);
-    setLoading(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+    try {
+      const reply = await getFinancialAdvice(trimmed, MOCK_TRANSACTIONS);
+      const aiMsg: ChatMessage = {
+        id: `m-${Date.now()}`,
+        role: 'model',
+        text: reply,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (e) {
+      setError("I couldn't reach the VasPay AI brain. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const suggestions = [
-    "How much did I spend on food?",
-    "Check for suspicious transactions",
-    "What is my current balance?",
-    "Help me budget for next month"
-  ];
+  const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send(input);
+    }
+  };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] md:h-[600px] max-w-2xl mx-auto bg-white md:rounded-2xl md:shadow-xl md:border md:border-gray-200 overflow-hidden">
-      {/* Chat Header */}
-      <div className="bg-indigo-600 p-4 text-white flex items-center gap-3 shadow-md z-10">
-        <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
-            <Bot size={24} className="text-white" />
-        </div>
-        <div>
-            <h2 className="font-bold text-lg">VasPay Agent</h2>
-            <div className="flex items-center gap-1.5 opacity-80">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                <span className="text-xs">Online • Powered by Gemini</span>
-            </div>
-        </div>
-      </div>
-
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-          >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-indigo-100 text-indigo-600' : 'bg-teal-100 text-teal-600'}`}>
-              {msg.role === 'user' ? <UserIcon size={16} /> : <Sparkles size={16} />}
-            </div>
-            
-            <div
-              className={`max-w-[80%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
-                msg.role === 'user'
-                  ? 'bg-indigo-600 text-white rounded-tr-none'
-                  : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-              }`}
+    <div className="h-full flex flex-col bg-slate-50">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white/85 backdrop-blur-md border-b border-slate-200">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 rounded-xl hover:bg-slate-100 transition"
+              aria-label="Back"
             >
-              {msg.text}
+              <ArrowLeft className="w-5 h-5 text-slate-700" />
+            </button>
+          )}
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center shadow-sm">
+            <Bot className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <h1 className="font-bold text-slate-900 leading-tight">VasPay AI</h1>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] text-slate-500">Online · Powered by Gemini</span>
             </div>
           </div>
-        ))}
-        {loading && (
-          <div className="flex items-start gap-3">
-             <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center">
-                <Sparkles size={16} />
-             </div>
-             <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm flex items-center gap-2">
-                <Loader2 size={16} className="animate-spin text-indigo-500" />
-                <span className="text-xs text-gray-500">Thinking...</span>
-             </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      {/* Input Area */}
-      <div className="p-4 bg-white border-t border-gray-100">
-        {/* Suggestions chips */}
-        {messages.length < 3 && !loading && (
-             <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar mb-2">
-                {suggestions.map(s => (
-                    <button 
-                        key={s} 
-                        onClick={() => { setInput(s); setTimeout(() => handleSend(), 0); }} // quick fix to send immed
-                        className="whitespace-nowrap bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-medium border border-indigo-100 hover:bg-indigo-100 transition-colors"
-                    >
-                        {s}
-                    </button>
-                ))}
-             </div>
-        )}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+          {messages.map((msg) => {
+            const isUser = msg.role === 'user';
+            return (
+              <div
+                key={msg.id}
+                className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    isUser ? 'bg-indigo-100 text-indigo-600' : 'bg-violet-100 text-violet-600'
+                  }`}
+                >
+                  {isUser ? <UserIcon className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                </div>
+                <div
+                  className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                    isUser
+                      ? 'bg-indigo-600 text-white rounded-tr-sm'
+                      : 'bg-white text-slate-800 border border-slate-200 rounded-tl-sm'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                  <p
+                    className={`text-[10px] mt-1 ${
+                      isUser ? 'text-indigo-100' : 'text-slate-400'
+                    }`}
+                  >
+                    {new Date(msg.timestamp).toLocaleTimeString('en-NP', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Ask VasPay AI..."
-            className="flex-1 bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block w-full p-3 outline-none"
-            disabled={loading}
-          />
-          <button
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl p-3 transition-colors shadow-sm"
-          >
-            <Send size={20} />
-          </button>
+          {/* Thinking indicator */}
+          {loading && (
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="ml-1 text-xs text-slate-500">Thinking…</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="mx-auto max-w-md rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <div ref={endRef} />
+        </div>
+      </div>
+
+      {/* Composer */}
+      <div className="sticky bottom-0 bg-white border-t border-slate-200">
+        <div className="max-w-2xl mx-auto px-4 py-3 space-y-3">
+          {/* Suggestion chips */}
+          {!loading && messages.length <= 1 && (
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => send(s.prompt)}
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-semibold border border-indigo-100 hover:bg-indigo-100 active:scale-95 transition"
+                >
+                  <s.icon className="w-3.5 h-3.5" />
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input bar */}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKey}
+              placeholder="Ask VasPay AI…"
+              disabled={loading}
+              className="flex-1 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-60"
+              aria-label="Message VasPay AI"
+            />
+            <button
+              onClick={() => send(input)}
+              disabled={loading || !input.trim()}
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl p-3 shadow-sm active:scale-95 transition"
+              aria-label="Send message"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
     </div>

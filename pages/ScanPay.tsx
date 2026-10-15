@@ -1,126 +1,219 @@
-import React, { useState, useEffect } from 'react';
-import { Camera, QrCode, X, Zap } from 'lucide-react';
+/**
+ * VasPay — Nepal's First Agentic AI Digital Wallet
+ * Copyright (c) 2025 VasPay. MIT License.
+ *
+ * ScanPay page — full-screen faux camera viewfinder with corner brackets,
+ * scanning animation, detected-merchant card, amount, "Pay NPR X" →
+ * processing → success. No real camera required.
+ */
+import React, { useEffect, useState } from 'react';
+import {
+  CheckCircle2,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  X,
+  Zap,
+} from 'lucide-react';
 
 interface ScanPayProps {
-    onBack: () => void;
+  onBack: () => void;
 }
+
+type Stage = 'scanning' | 'detected' | 'paying' | 'success';
+
+const MERCHANT = {
+  name: 'Bhatbhateni Supermarket',
+  branch: 'Koteshwor Branch',
+  emoji: 'B',
+  accent: 'from-orange-500 to-amber-500',
+  amount: 1250,
+};
+
+const npr = new Intl.NumberFormat('en-NP', { style: 'currency', currency: 'NPR', maximumFractionDigits: 2 });
 
 const ScanPay: React.FC<ScanPayProps> = ({ onBack }) => {
-    const [scanned, setScanned] = useState(false);
-    const [processing, setProcessing] = useState(false);
+  const [stage, setStage] = useState<Stage>('scanning');
+  const [amount, setAmount] = useState(String(MERCHANT.amount));
 
-    // Simulate scanning delay
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setScanned(true);
-        }, 3000);
-        return () => clearTimeout(timer);
-    }, []);
+  // Auto-detect after 2.5s
+  useEffect(() => {
+    if (stage !== 'scanning') return;
+    const t = setTimeout(() => setStage('detected'), 2500);
+    return () => clearTimeout(t);
+  }, [stage]);
 
-    const handlePay = () => {
-        setProcessing(true);
-        setTimeout(() => {
-            alert("Payment simulated successfully! (Demo Mode)");
-            setProcessing(false);
-            onBack();
-        }, 1500);
-    }
+  const pay = () => {
+    setStage('paying');
+    setTimeout(() => setStage('success'), 1500);
+  };
 
+  // ───── success ────────────────────────────────────────────────
+  if (stage === 'success') {
     return (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col text-white">
-            {/* Header */}
-            <div className="p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10">
-                <button onClick={onBack} className="bg-white/20 p-2 rounded-full backdrop-blur-md">
-                    <X size={24} />
-                </button>
-                <h2 className="font-semibold text-lg">Scan & Pay</h2>
-                <button className="bg-white/20 p-2 rounded-full backdrop-blur-md">
-                    <QrCode size={24} />
-                </button>
-            </div>
-
-            {/* Camera Viewport Simulation */}
-            <div className="flex-1 relative flex flex-col items-center justify-center bg-gray-900">
-                {!scanned ? (
-                    <>
-                        {/* Scanning Animation */}
-                        <div className="w-64 h-64 border-2 border-white/30 rounded-3xl relative overflow-hidden">
-                             <div className="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-50"></div>
-                             <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500 shadow-[0_0_20px_rgba(99,102,241,1)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                             <div className="absolute inset-0 flex items-center justify-center">
-                                <p className="text-white/70 text-sm animate-pulse">Locating QR Code...</p>
-                             </div>
-                        </div>
-                        <p className="mt-8 text-center text-gray-400 text-sm px-8">Align the QR code within the frame to pay instantly.</p>
-                    </>
-                ) : (
-                    <div className="bg-white text-gray-900 p-6 rounded-3xl w-80 shadow-2xl animate-[popIn_0.3s_ease-out]">
-                        <div className="flex flex-col items-center mb-6">
-                            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                                <span className="text-2xl font-bold text-orange-600">B</span>
-                            </div>
-                            <h3 className="font-bold text-xl">Bhatbhateni Supermarket</h3>
-                            <p className="text-sm text-gray-500">Koteshwor Branch</p>
-                        </div>
-                        
-                        <div className="space-y-4">
-                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                <label className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Amount (NPR)</label>
-                                <input type="number" defaultValue={1250} className="w-full bg-transparent text-2xl font-bold text-gray-800 outline-none mt-1" />
-                             </div>
-                             
-                             <div className="bg-indigo-50 p-3 rounded-lg flex items-center gap-3">
-                                <Zap size={18} className="text-indigo-600" />
-                                <p className="text-xs text-indigo-800">VasPay AI: This merchant is verified and safe.</p>
-                             </div>
-
-                             <button 
-                                onClick={handlePay}
-                                disabled={processing}
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
-                            >
-                                {processing ? <span className="animate-spin">⌛</span> : 'Confirm Payment'}
-                             </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-            
-            {/* Bottom Controls */}
-            {!scanned && (
-                <div className="p-8 pb-12 bg-black flex justify-center items-center gap-8">
-                    <button className="flex flex-col items-center gap-2 opacity-70 hover:opacity-100">
-                        <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
-                            <span className="text-xs">Img</span>
-                        </div>
-                        <span className="text-xs">Upload</span>
-                    </button>
-                    <button className="w-20 h-20 bg-white rounded-full border-4 border-gray-300 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                        <Camera size={32} className="text-gray-900" />
-                    </button>
-                    <button className="flex flex-col items-center gap-2 opacity-70 hover:opacity-100">
-                         <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
-                            <span className="text-xs">⚡</span>
-                        </div>
-                        <span className="text-xs">Flash</span>
-                    </button>
-                </div>
-            )}
-            
-            <style>{`
-                @keyframes scan {
-                    0% { top: 0%; opacity: 0; }
-                    10% { opacity: 1; }
-                    90% { opacity: 1; }
-                    100% { top: 100%; opacity: 0; }
-                }
-                @keyframes popIn {
-                    from { transform: scale(0.9); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-            `}</style>
+      <div className="fixed inset-0 z-50 bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-24 h-24 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center mb-6 animate-bounce">
+          <CheckCircle2 className="w-12 h-12" />
         </div>
+        <h2 className="text-2xl font-extrabold">Payment successful</h2>
+        <p className="text-slate-300 mt-2">
+          {npr.format(parseFloat(amount) || 0)} paid to
+        </p>
+        <p className="text-white font-semibold mt-0.5">{MERCHANT.name}</p>
+        <p className="mt-1 text-xs text-slate-400">Transaction ID · VX{Date.now().toString().slice(-8)}</p>
+        <button
+          onClick={onBack}
+          className="mt-8 bg-white text-slate-900 font-bold px-8 py-3.5 rounded-xl shadow hover:shadow-lg active:scale-95 transition"
+        >
+          Done
+        </button>
+      </div>
     );
-}
+  }
+
+  // ───── scanning / detected ──────────────────────────────────
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900 text-white flex flex-col">
+      {/* Top bar */}
+      <div className="absolute top-0 inset-x-0 z-20 p-5 flex justify-between items-center bg-gradient-to-b from-black/70 to-transparent">
+        <button
+          onClick={onBack}
+          className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center hover:bg-white/25 transition"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        <h2 className="font-bold text-lg">Scan & Pay</h2>
+        <div className="w-10 h-10" />
+      </div>
+
+      {/* Viewfinder */}
+      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+        {/* faux camera backdrop */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(circle at 30% 30%, rgba(99,102,241,0.18), transparent 60%), radial-gradient(circle at 70% 70%, rgba(139,92,246,0.18), transparent 55%)',
+          }}
+          aria-hidden
+        />
+
+        {stage === 'scanning' && (
+          <div className="relative flex flex-col items-center">
+            {/* Frame with corner brackets */}
+            <div className="relative w-72 h-72 rounded-3xl">
+              <Corner className="-top-1 -left-1 border-t-4 border-l-4 rounded-tl-3xl" />
+              <Corner className="-top-1 -right-1 border-t-4 border-r-4 rounded-tr-3xl" />
+              <Corner className="-bottom-1 -left-1 border-b-4 border-l-4 rounded-bl-3xl" />
+              <Corner className="-bottom-1 -right-1 border-b-4 border-r-4 rounded-br-3xl" />
+
+              <div className="absolute inset-4 rounded-2xl border border-white/10 overflow-hidden">
+                <div className="scan-line" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="text-white/70 text-sm animate-pulse flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Locating QR…
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p className="mt-8 text-center text-slate-300 text-sm px-8 max-w-xs">
+              Align the merchant QR code inside the frame to pay instantly.
+            </p>
+          </div>
+        )}
+
+        {stage === 'detected' && (
+          <div className="w-80 max-w-[90vw] rounded-3xl bg-white text-slate-900 p-6 shadow-2xl animate-[popIn_0.25s_ease-out]">
+            <div className="flex flex-col items-center mb-5">
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${MERCHANT.accent} flex items-center justify-center text-white font-bold text-2xl shadow-lg mb-3`}>
+                {MERCHANT.emoji}
+              </div>
+              <h3 className="font-bold text-lg text-slate-900 text-center">{MERCHANT.name}</h3>
+              <p className="text-xs text-slate-500">{MERCHANT.branch}</p>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+              <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Amount (NPR)</label>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-slate-400 font-semibold">Rs.</span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="flex-1 bg-transparent text-2xl font-bold text-slate-900 outline-none"
+                  aria-label="Payment amount"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-100 p-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600" fill="currentColor" />
+              <p className="text-xs text-emerald-700">
+                VasPay AI: merchant verified, low fraud risk.
+              </p>
+            </div>
+
+            <button
+              onClick={pay}
+              disabled={stage === 'paying'}
+              className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl shadow active:scale-95 transition flex items-center justify-center gap-2"
+            >
+              {stage === 'paying' ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> Processing…
+                </>
+              ) : (
+                <>
+                  <Zap className="w-5 h-5" /> Pay {npr.format(parseFloat(amount) || 0)}
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onBack}
+              className="mt-2 w-full py-2 text-xs font-semibold text-slate-400 hover:text-slate-600 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {/* Trust footer */}
+        {stage === 'scanning' && (
+          <div className="absolute bottom-6 inset-x-0 px-6 flex items-center justify-center gap-2 text-xs text-slate-400">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            Secured by 256-bit encryption · VasPay AI screening
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes scan {
+          0% { top: 0%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 100%; opacity: 0; }
+        }
+        .scan-line {
+          position: absolute;
+          left: 0; right: 0; top: 0;
+          height: 3px;
+          background: linear-gradient(90deg, transparent, rgb(129,140,248), rgb(167,139,250), transparent);
+          box-shadow: 0 0 16px rgba(129,140,248,0.9);
+          animation: scan 2.2s ease-in-out infinite;
+        }
+        @keyframes popIn {
+          from { transform: scale(0.94); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+const Corner: React.FC<{ className?: string }> = ({ className }) => (
+  <div className={`absolute w-8 h-8 border-indigo-400 ${className ?? ''}`} />
+);
 
 export default ScanPay;
