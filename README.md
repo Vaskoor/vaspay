@@ -55,6 +55,20 @@ showcase what an agentic AI wallet experience could feel like. See
 
 ## ✨ Features
 
+### Screenshots
+
+The screenshots below are **proof that the deployed app actually runs** — they were captured by `agent-browser` against a live `vite preview` server.
+
+| Landing hero | Dashboard | Quick actions | Transactions | Desktop |
+|---------------|-----------|---------------|--------------|---------|
+| ![Landing hero](docs/screenshots/01-landing-hero.png) | ![Dashboard](docs/screenshots/02-dashboard.png) | ![Features](docs/screenshots/03-features.png) | ![Transactions](docs/screenshots/04-transactions.png) | ![Desktop](docs/screenshots/05-desktop.png) |
+
+**Landing hero** — "Money that thinks. Built for Nepal." with a Get Started CTA + NRB Compliant / 256-bit Encryption / PCI-DSS Ready badges.
+**Dashboard** — Total balance in NPR, Load/Send actions, quick-action grid (Send/Load/Scan & Pay), monthly spend vs budget summary, bottom nav with AI Chat.
+**Quick actions** — Send Money, Load Money, Scan & Pay, Savings goals, Bank Transfer, Cards.
+**Transactions** — Recent transaction list with merchant icons + amounts.
+**Desktop** — Responsive at 1280px width.
+
 ### Wallet
 
 - **Send Money** — Recipient + amount + remarks form with an in-flow AI
