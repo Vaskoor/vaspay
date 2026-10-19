@@ -14,6 +14,7 @@
  * @author VasPay Team
  */
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Layout from './components/ui/Layout';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
@@ -122,7 +123,19 @@ const App: React.FC = () => {
 
   // Full-screen views bypass the shell entirely.
   if (isFullScreen) {
-    return <>{content}</>;
+    return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={currentView}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+      >
+        {content}
+      </motion.div>
+    </AnimatePresence>
+  );
   }
 
   return (
@@ -131,7 +144,17 @@ const App: React.FC = () => {
       onNavigate={setCurrentView}
       user={MOCK_USER}
     >
-      {content}
+      <AnimatePresence mode="wait">
+      <motion.div
+        key={currentView}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+      >
+        {content}
+      </motion.div>
+    </AnimatePresence>
     </Layout>
   );
 };
